@@ -18,6 +18,88 @@ const viewAllEmp = () => {
     })
 
 }
+// let's add departments by getting data from the user with prompt and using it like we would use as a form 
+const addDep = () => {
+    const question = [
+        {
+            name: "name",
+            message: "Whats the name of the department?",
+            type: "input",
+        }
+    ]
+    inquirer.prompt(question).then((answer) => {
+        connection.query(
+            'INSERT INTO department SET ?',
+
+            {
+                fname: answer.name,
+
+            },
+            (err) => {
+                if (err) throw err;
+                console.log('Your department data was created successfully!');
+                init();
+            }
+        );
+    })
+}
+const addRole = () => {
+    connection.query("SELECT * FROM department", (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        const question = [
+            {
+                name: "title",
+                message: "Whats the title of the role?",
+                type: "input",
+            },
+            {
+                name: "salary",
+                message: "whats the anual salary of the role?",
+                type: "input",
+            },
+            {
+                name: "department",
+                message: "whats role department?",
+                type: "rawlist",
+                choices() {
+                    const choiceArray = [];
+
+                    res.forEach(({ name }) => {
+                        choiceArray.push(name);
+                    });
+
+                    return choiceArray;
+                }
+            },
+        ]
+        inquirer.prompt(question).then((answer) => {
+            let chosenDep;
+
+            res.forEach((item) => {
+                if (item.name === answer.department) {
+                    chosenDep = item;
+                }
+            });
+            connection.query(
+                'INSERT INTO role SET ?',
+
+                {
+                    title: answer.title,
+                    salary: answer.salary,
+                    department_id: chosenDep.id,
+
+                },
+                (err) => {
+                    if (err) throw err;
+                    console.log('Your role data was created successfully!');
+                    init();
+                }
+            );
+
+        })
+    });
+}
 // this function adds new employee by asking them questions and then using it values to fill the database just lkike a form
 const addEmp = () => {
     connection.query("SELECT * FROM role", (err, res) => {
@@ -124,6 +206,93 @@ const addEmp = () => {
         })
     })
 }
+
+// delete employe
+// first lets do a query and display to the user all employee avaiable to delete
+// then we confirm thats the employee before deleting
+const deleteEmp = () => {
+    connection.query("SELECT * FROM employee", (err, resp) => {
+        if (err) throw err;
+        console.table(resp);
+        const question = [
+            {
+                name: "user",
+                message: "which employee would you like to delete?",
+                type: "rawlist",
+                choices() {
+                    const choiceArray = [];
+                    resp.forEach(({ first_name }) => {
+                        choiceArray.push(first_name);
+                    });
+                    choiceArray.push('');
+                    return choiceArray;
+                }
+            },
+            {
+                name: "confirm",
+                message: "Are you sure you want to delete this employee?",
+                type: "list",
+                choices: ["yes", "no"],
+            }
+        ]
+        inquirer.prompt(question).then((answer) => {
+            if (answer.confirm === "no") {
+                init();
+            }
+            else {
+                connection.query(`DELETE from employee WHERE first_name = ${answer.user}`, (err, resp) => {
+                    if (err) throw err;
+                    console.log("Employee deleted!")
+                    init();
+                })
+            }
+        })
+
+    });
+
+}
+// delete department
+const deleteDep = () => {
+    connection.query("SELECT * FROM department", (err, resp) => {
+        if (err) throw err;
+        console.table(resp);
+        const question = [
+            {
+                name: "department",
+                message: "which department would you like to delete?",
+                type: "rawlist",
+                choices() {
+                    const choiceArray = [];
+                    resp.forEach(({ name }) => {
+                        choiceArray.push(name);
+                    });
+                    choiceArray.push('');
+                    return choiceArray;
+                }
+            },
+            {
+                name: "confirm",
+                message: "Are you sure you want to delete this employee?",
+                type: "list",
+                choices: ["yes", "no"],
+            }
+        ]
+        inquirer.prompt(question).then((answer) => {
+            if (answer.confirm === "no") {
+                init();
+            }
+            else {
+                connection.query(`DELETE from department WHERE name = ${answer.name}`, (err, resp) => {
+                    if (err) throw err;
+                    console.log("Department deleted!")
+                    init();
+                })
+            }
+        })
+
+    });
+
+}
 // this fuction will do a query and return all departments
 // then it will promp the first question again
 const viewAllDep = () => {
@@ -189,7 +358,11 @@ const checkChoice = (res) => {
         case "add employee":
             return addEmp();
         case "delete employee":
-            return
+            return deleteEmp();
+        case "add department":
+            return addDep();
+        case "delete department":
+            return deleteDep();
         case "update employee role":
             return
         case "update employee manager":
