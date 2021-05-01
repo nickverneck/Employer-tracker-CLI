@@ -5,7 +5,7 @@ const q1 = [
         name: "firstQ",
         message: "What would you like to do?",
         type: "list",
-        choices: ["View all Employees", "View all roles", "View all departments", "add employee", "add department", "add role", "update employee role", "exit", "View all Employees by department", "view all employees by Manager", "delete employee", "update employee manager", "exit"]
+        choices: ["View all Employees", "View all roles", "View all departments", "add employee", "delete employee", "add department", "delete department", "add role", "delete role", "update employee role", "exit", "View all Employees by department", "view all employees by Manager", "update employee manager", "exit"]
     }
 ];
 // this fuction will do a query and return all employees
@@ -13,6 +13,7 @@ const q1 = [
 const viewAllEmp = () => {
     connection.query("SELECT * FROM employee", (err, res) => {
         if (err) throw err;
+        console.clear();
         console.table(res);
         init();
     })
@@ -32,11 +33,12 @@ const addDep = () => {
             'INSERT INTO department SET ?',
 
             {
-                fname: answer.name,
+                name: answer.name,
 
             },
             (err) => {
                 if (err) throw err;
+                console.clear();
                 console.log('Your department data was created successfully!');
                 init();
             }
@@ -46,7 +48,7 @@ const addDep = () => {
 const addRole = () => {
     connection.query("SELECT * FROM department", (err, res) => {
         if (err) throw err;
-        console.table(res);
+
         const question = [
             {
                 name: "title",
@@ -60,7 +62,7 @@ const addRole = () => {
             },
             {
                 name: "department",
-                message: "whats role department?",
+                message: "what's the role department?",
                 type: "rawlist",
                 choices() {
                     const choiceArray = [];
@@ -92,6 +94,7 @@ const addRole = () => {
                 },
                 (err) => {
                     if (err) throw err;
+                    console.clear();
                     console.log('Your role data was created successfully!');
                     init();
                 }
@@ -169,6 +172,7 @@ const addEmp = () => {
                         },
                         (err) => {
                             if (err) throw err;
+                            console.clear();
                             console.log('Your employee data was created successfully!');
                             init();
                         }
@@ -193,6 +197,7 @@ const addEmp = () => {
                         },
                         (err) => {
                             if (err) throw err;
+                            console.clear();
                             console.log('Your employee data was created successfully!');
                             init();
                         }
@@ -224,7 +229,7 @@ const deleteEmp = () => {
                     resp.forEach(({ first_name }) => {
                         choiceArray.push(first_name);
                     });
-                    choiceArray.push('');
+                    
                     return choiceArray;
                 }
             },
@@ -240,8 +245,11 @@ const deleteEmp = () => {
                 init();
             }
             else {
-                connection.query(`DELETE from employee WHERE first_name = ${answer.user}`, (err, resp) => {
+                connection.query(`DELETE from employee WHERE ?`,{
+                    first_name: answer.user,
+                }, (err, resp) => {
                     if (err) throw err;
+                    console.clear();
                     console.log("Employee deleted!")
                     init();
                 })
@@ -266,13 +274,13 @@ const deleteDep = () => {
                     resp.forEach(({ name }) => {
                         choiceArray.push(name);
                     });
-                    choiceArray.push('');
+                    
                     return choiceArray;
                 }
             },
             {
                 name: "confirm",
-                message: "Are you sure you want to delete this employee?",
+                message: "Are you sure you want to delete this department?",
                 type: "list",
                 choices: ["yes", "no"],
             }
@@ -282,8 +290,11 @@ const deleteDep = () => {
                 init();
             }
             else {
-                connection.query(`DELETE from department WHERE name = ${answer.name}`, (err, resp) => {
+                connection.query(`DELETE from department WHERE ?`,{
+                    name:answer.department,
+                }, (err, resp) => {
                     if (err) throw err;
+                    console.clear();
                     console.log("Department deleted!")
                     init();
                 })
@@ -293,11 +304,135 @@ const deleteDep = () => {
     });
 
 }
+// delete role
+const deleteRole = () => {
+    connection.query("SELECT * FROM role", (err, resp) => {
+        if (err) throw err;
+        console.table(resp);
+        const question = [
+            {
+                name: "role",
+                message: "which role would you like to delete?",
+                type: "rawlist",
+                choices() {
+                    const choiceArray = [];
+                    resp.forEach(({ title }) => {
+                        choiceArray.push(title);
+                    });
+                    
+                    return choiceArray;
+                }
+            },
+            {
+                name: "confirm",
+                message: "Are you sure you want to delete this role?",
+                type: "list",
+                choices: ["yes", "no"],
+            }
+        ]
+        inquirer.prompt(question).then((answer) => {
+            if (answer.confirm === "no") {
+                init();
+            }
+            else {
+                connection.query(`DELETE from role WHERE ?`,{
+                    title:answer.role,
+                }, (err, resp) => {
+                    if (err) throw err;
+                    console.clear();
+                    console.log("Role deleted!")
+                    init();
+                })
+            }
+        })
+
+    });
+
+}
+
+
+// update employee Role
+const updateEmpRole = () => {
+    connection.query("SELECT * from role JOIN employee on employee.role_id = role.id", (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        connection.query("SELECT * from role", (erro, resp) => {
+            if (erro) throw err;
+            const question = [
+                {
+                    name: "employee",
+                    message: "which employee would you like to update?",
+                    type: "rawlist",
+                    choices() {
+                        const choiceArray = [];
+                        res.forEach(({ first_name }) => {
+                            choiceArray.push(first_name);
+                        });
+
+                        return choiceArray;
+                    }
+                },
+                {
+                    name: "role",
+                    message: "which role would you like to add to the employee?",
+                    type: "rawlist",
+                    choices() {
+                        const choiceArray = [];
+                        resp.forEach(({ title }) => {
+                            choiceArray.push(title);
+                        });
+
+                        return choiceArray;
+                    }
+                }
+            ]
+
+            inquirer.prompt(question).then((answer) => {
+                let chosenRole;
+                let chosenEmp;
+                resp.forEach((item) => {
+
+                    if (item.title === answer.role) {
+                        chosenRole = item.id;
+                    }
+                });
+                res.forEach((item) => {
+
+                    if (item.first_name === answer.employee) {
+                        chosenEmp = item.id;
+                    }
+                });
+                connection.query(
+                    'UPDATE employee SET ? WHERE ?',
+                    [
+                        {
+                            role_id: chosenRole,
+                        },
+                        {
+                            id: chosenEmp,
+                        },
+                    ],
+                    (error) => {
+                        if (error) throw error;
+                        console.clear()
+                        console.log('Employee data updated!');
+                        init();
+                    }
+                );
+
+            })
+
+        })
+
+    })
+}
+
 // this fuction will do a query and return all departments
 // then it will promp the first question again
 const viewAllDep = () => {
     connection.query("SELECT * FROM department", (err, res) => {
         if (err) throw err;
+        console.clear();
         console.table(res);
         init();
     })
@@ -308,6 +443,7 @@ const viewAllDep = () => {
 const viewAllRoles = () => {
     connection.query("SELECT * FROM role", (err, res) => {
         if (err) throw err;
+        console.clear();
         console.table(res);
         init();
     })
@@ -336,6 +472,7 @@ const viewByDep = () => {
             connection.query(`SELECT * FROM employee JOIN role ON employee.role_id = role.id join JOIN department ON role.department_id = department.id WHERE department.name=${resp.choice}`,
                 (erro, respo) => {
                     if (erro) throw erro;
+                    console.clear();
                     console.table(respo);
                 })
         });
@@ -363,8 +500,12 @@ const checkChoice = (res) => {
             return addDep();
         case "delete department":
             return deleteDep();
+        case "add role":
+            return addRole();
+        case "delete role":
+            return deleteRole();
         case "update employee role":
-            return
+            return updateEmpRole();
         case "update employee manager":
             return
         case "exit":
