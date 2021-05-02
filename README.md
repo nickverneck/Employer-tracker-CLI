@@ -2,6 +2,8 @@
   
 ## Description
 this app uses NodejS,express & mySQl to create a employee tracker where you can asign roles, departments,managers , delete, update etc.
+### walkthrough video
+https://youtu.be/Ll6NHcs6_Mo
 # ![ss](./ss.jpg)
 ## Table of Contents 
 * [Installation](#installation)
